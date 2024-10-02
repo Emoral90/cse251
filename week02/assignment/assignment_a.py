@@ -23,21 +23,35 @@ from cse251functions import *
 # global variable to keeping track of the final product
 PRODUCT = 0
 
+# Function to calculate the factorial of a given number
+def find_product(n):
+    global PRODUCT
+    PRODUCT = 1
+    for i in range(1, n):
+        PRODUCT *=i
 
 def main():
 
-    # Test your thread/function first with 5 (so 1 x 2 x 3 x 4 = 24) (replace this line with your own comment)
-    #assert PRODUCT == 24, f'The product should equal 45 but instead was {
-    #    PRODUCT}'
+    # Create, start, and join threaded function with an argument of 5
+    t5 = threading.Thread(target=find_product, args=(5,))
+    t5.start()
+    t5.join()
+    assert PRODUCT == 24, f'The product should equal 45 but instead was {
+       PRODUCT}'
 
-    # Then with 10 (replace this line with your own comment)
-    #assert PRODUCT == 362880, f'The product should equal 78 but instead was {
-    #    PRODUCT}'
+    # Create, start, and join threaded function with an argument of 10
+    t10 = threading.Thread(target=find_product, args=(10,))
+    t10.start()
+    t10.join()
+    assert PRODUCT == 362880, f'The product should equal 78 but instead was {
+       PRODUCT}'
 
-    # Then with 15 (replace this line with your own comment)
-    #assert PRODUCT == 87178291200, f'The product should equal 136 but instead was {
-    #    PRODUCT}'
-    pass # delete this line
+    # Create, start, and join threaded function with an argument of 15
+    t15 = threading.Thread(target=find_product, args=(15,))
+    t15.start()
+    t15.join()
+    assert PRODUCT == 87178291200, f'The product should equal 136 but instead was {
+       PRODUCT}'
 
 if __name__ == '__main__':
     main()

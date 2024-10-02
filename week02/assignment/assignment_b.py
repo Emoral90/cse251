@@ -20,24 +20,45 @@ from cse251functions import *
 # DO NOT USE YOUR OWN GLOBALS #
 ###############################
 
-# TODO - Create a thread class, see this week's reading to learn how (delete this line and
-# replace with your own description of the purpose of your class)
+# Create Thread_product class by inheiriting from the threading.Thread class
+class Thread_product(threading.Thread):
+    def __init__(self, n):
+        threading.Thread.__init__(self)
+        # Store the input and init the product to save the result
+        self.n = n
+        self.product = 1
+
+    # Defeine the behavior of the thread by calculating the factorial
+    def run(self):
+        for i in range(1, self.n):
+            self.product *=i
 
 
 def main():
     # Instantiate your thread class and pass in 5 (delete this line).
     # Test (assert) if its product attribute is equal to 45 (delete this line).
     # Note: do no use 'yourThread' as the name of your thread object (delete this line).
-    assert yourThread.product == 24, f'The product should equal 24 but instead was {
-        yourThread.product}'
 
-    # Repeat, passing in 10 (delete this line).
-    assert yourThread.product == 362880, f'The product should equal 362880 but instead was {
-        yourThread.product}'
+    # Create, start, and join threaded class with an argument of 5
+    t5 = Thread_product(5)
+    t5.start()
+    t5.join()
+    assert t5.product == 24, f'The product should equal 24 but instead was {
+        t5.product}'
 
-    # Repeat, passing in 15 (delete this line).
-    assert yourThread.product == 87178291200, f'The product should equal 87178291200 but instead was {
-        yourThread.product}'
+    # Create, start, and join threaded class with an argument of 10
+    t10 = Thread_product(10)
+    t10.start()
+    t10.join()
+    assert t10.product == 362880, f'The product should equal 362880 but instead was {
+        t10.product}'
+
+    # Create, start, and join threaded class with an argument of 15
+    t15 = Thread_product(15)
+    t15.start()
+    t15.join()
+    assert t15.product == 87178291200, f'The product should equal 87178291200 but instead was {
+        t15.product}'
 
 
 if __name__ == '__main__':
