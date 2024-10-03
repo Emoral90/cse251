@@ -80,6 +80,14 @@ def main():
     last_number = first_number + interval
 
     # TODO write code here
+    lock = threading.Thread()
+
+    step = first_number // interval
+
+    for i in range(0, first_number-1, step):
+        t = threading.Thread(target=is_prime, args=(first_number, ))
+        t.start()
+        t.join()
 
     # Use the below code to check and print your results
     assert NUMBERS_EXAMINED_COUNT == 370_803, f"Should check exactly 370,803 numbers, but checked {

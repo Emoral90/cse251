@@ -92,32 +92,40 @@ def draw_coord_system(tur: SlowTurtle, x: int, y: int, size=300, color='black'):
         tur.left(90)
 
 
-def draw_squares(tur: SlowTurtle):
+def draw_squares(tur: SlowTurtle, lock):
     """Draw a group of squares"""
     for x in range(-300, 350, 200):
         for y in range(-300, 350, 200):
+            lock.acquire()
             draw_square(tur, x - 50, y + 50, 100)
+            lock.release()
 
 
-def draw_circles(tur: SlowTurtle):
+def draw_circles(tur: SlowTurtle, lock):
     """Draw a group of circles"""
     for x in range(-300, 350, 200):
         for y in range(-300, 350, 200):
+            lock.acquire()
             draw_circle(tur, x, y-2, 50)
+            lock.release()
 
 
-def draw_triangles(tur: SlowTurtle):
+def draw_triangles(tur: SlowTurtle, lock):
     """Draw a group of triangles"""
     for x in range(-300, 350, 200):
         for y in range(-300, 350, 200):
+            lock.acquire()
             draw_triangle(tur, x-30, y-30+10, 60)
+            lock.release()
 
 
-def draw_rectangles(tur: SlowTurtle):
+def draw_rectangles(tur: SlowTurtle, lock):
     """Draw a group of Rectangles"""
     for x in range(-300, 350, 200):
         for y in range(-300, 350, 200):
+            lock.acquire()
             draw_rectangle(tur, x-10, y+5, 20, 15)
+            lock.release()
 
 def draw(tur: SlowTurtle, main_turtle: RawTurtle):
     """Draw different"""
@@ -134,10 +142,28 @@ def draw(tur: SlowTurtle, main_turtle: RawTurtle):
     tur.move(0, 0)
 
     # TODO - modify to make these draw in threads and not draw in order (meaning, that it shouldn't draw all the squares, then the circles, etc.). It might draw 4 of the same shapes at a time, but then it should draw a different shape. For advanced users, try and see if you can figure out a way for it to not draw 4 of the same shape, but draw a different shape each time (hint: random module).
-    draw_squares(tur)
-    draw_circles(tur)
-    draw_triangles(tur)
-    draw_rectangles(tur)
+    
+    # draw_squares(tur)
+    # draw_circles(tur)
+    # draw_triangles(tur)
+    # draw_rectangles(tur)
+
+    lock = threading.Lock()
+    threads = []
+    t_sq = threading.Thread(target=draw_squares, args=(tur, lock))
+    t_cir = threading.Thread(target=draw_circles, args=(tur, lock))
+    t_tri = threading.Thread(target=draw_triangles, args=(tur, lock))
+    t_rec = threading.Thread(target=draw_rectangles, args=(tur, lock))
+
+    t_sq.start()
+    t_cir.start()
+    t_tri.start()
+    t_rec.start()
+
+    t_sq.join()
+    t_cir.join()
+    t_tri.join()
+    t_rec.join()
 
     print('All drawing commands have been created')
 
