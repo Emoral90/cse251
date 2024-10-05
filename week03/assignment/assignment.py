@@ -10,16 +10,16 @@ Requirements
 5. COMMENT every line that you write yourself.
    
 Questions:
-1. Time to run using 1 thread =
-2. Time to run using 10 threads =
-3. Time to run using 50 threads =
-4. Time to run using 101 threads =
+1. Time to run using 1 thread = Avg of 3.25 sec
+2. Time to run using 10 threads = 3.25 sec
+3. Time to run using 50 threads = 3.26 sec
+4. Time to run using 101 threads = 3.24 sec
 4. Based on your study of the GIL (see https://realpython.com/python-gil), 
    what conclusions can you draw about the similarity of the times (short answer)?
-   >
+   > Python's GIL only allows for 1 active thread to run on the CPU, which means it can't truly run concurrently despite having more than 1 core. 
    >
 5. Is this assignment an IO Bound or CPU Bound problem (see https://stackoverflow.com/questions/868568/what-do-the-terms-cpu-bound-and-i-o-bound-mean)?
-   >
+   > This one is CPU bound
 '''
 
 import math
@@ -37,7 +37,7 @@ NUMBERS_EXAMINED_COUNT = 0
 
 # The number of threads to use (should try 1, 10, 50, and 101 and
 # report results above in the questions)
-NUMBER_THREADS = 10
+NUMBER_THREADS = 1
 
 def is_prime(n: int):
     """
@@ -77,17 +77,54 @@ def main():
     interval = 370_803
 
     # number to end at
-    last_number = first_number + interval
+    last_number = first_number + interval - 1
 
-    # TODO write code here
-    lock = threading.Thread()
+    # Divide the range among threads
+    step = interval // NUMBER_THREADS
+    threads = []
+    # remainder = interval % NUMBER_THREADS
+    start = first_number # For my own sanity when I plug in the args in the thread
+    lock = threading.Lock()
 
-    step = first_number // interval
+    def check_primes_in_range(start, end, lock):
+        global PRIME_COUNT, NUMBERS_EXAMINED_COUNT
+        local_prime_count = 0
+        local_examind_count = 0
 
-    for i in range(0, first_number-1, step):
-        t = threading.Thread(target=is_prime, args=(first_number, ))
+        # Loop through specified range to check for primes
+        for num in range(start, end + 1):
+            if is_prime(num):
+                local_prime_count += 1
+            local_examind_count += 1
+
+        # Update globals safely with lock
+        with lock:
+            PRIME_COUNT += local_prime_count
+            NUMBERS_EXAMINED_COUNT += local_examind_count
+
+        # print(f"Thread checked range {start}-{end}: Primes = {local_prime_count}, Examined = {local_examind_count}")
+
+
+    for i in range(NUMBER_THREADS):
+        # Calculate start and end values for each thread
+        # end = start + step - 1
+        # if i < remainder:
+        #     end += 1
+
+        start = first_number + i * step
+        end = start + step - 1 if i < NUMBER_THREADS - 1 else last_number
+
+        # Start thread to check primes in the assigned range
+        t = threading.Thread(target=check_primes_in_range, args=(start, end, lock))
+        threads.append(t)
         t.start()
+
+    # Join all threads
+    for t in threads:
         t.join()
+
+    # Check how many threads are active?
+    print(f"Final active threads: {threading.active_count()}")
 
     # Use the below code to check and print your results
     assert NUMBERS_EXAMINED_COUNT == 370_803, f"Should check exactly 370,803 numbers, but checked {
