@@ -32,6 +32,20 @@ CALL_COUNT = 0
 
 #TODO create a thread class that uses the 'requests' module
 #     to call the server using an URL.
+class DataThread(threading.Thread):
+    def __init__(self, url, data_list):
+        threading.Thread.__init__(self)
+        self.url = url
+        self.data_list = data_list
+
+    def run(self):
+        global CALL_COUNT
+        response = requests.get(self.url)
+        if response.status_code == 200:
+            self.data_list.append(response.json())
+        else:
+            print(f"Failed to retrieve data from {self.url}")
+
 
 
 def print_film_details(film, chars, planets, starships, vehicles, species):
@@ -69,20 +83,45 @@ def main():
     # of a dictionary (open your browser and go to http://127.0.0.1:8790
     # to see the json/dictionary). Note that these categories are for
     # all the Star Wars movies.
+    response = requests.get(TOP_API_URL)
+    if response.status_code != 200:
+        print("Failed to retrieve TOP_API_URL")
+        return
+    api_urls = response.json()
 
     # TODO Retrieve details on film 6 by putting a '6' at the end of the films URL.
     # For example, http://127.0.0.1:8790/films/6 gives you all the details of 
     # the sixth movie.
+    film_response = requests.get(f"{TOP_API_URL}/films/6")
+    if film_response.status_code != 200:
+        print("Failed to retrieve film 6")
+        return
+    film_data = film_response.json()
     
     # Iterate over each of the keys in the sixth film details and get the data
     # for each of the categories (might want to create function to do this)
+    categories = ["characters", "planets", "starships", "vehicles", "species"]
+    data_results = {category: [] for category in categories}
+
+    threads = []
+    for category in categories:
+        for url in film_data[category]:
+            thread = DataThread(url, data_results[category])
+            thread.start()
+            threads.append(thread)
+    for thread in threads:
+        thread.join()
 
     # TODO Call the display function
+    print_film_details(film_data, data_results["characters"], data_results["planets"], data_results["starships"], data_results["vehicles"], data_results["species"])
 
     print(f'There were {CALL_COUNT} calls to the server')
     total_time = time.perf_counter() - begin_time
     total_time_str = "{:.2f}".format(total_time)
-    print(f'Total time = {total_time_str} sec')
+    print(f'Total time = {total_time_str} sec')  
+
+    print(f"Active threads: {threading.active_count()}")
+    print(f"CAll_COUNT: {CALL_COUNT}")
     
     # If you do have a slow computer, then put a comment in your code about why you are changing
     # the total_time limit. Note: 90+ seconds means that you are not doing multithreading
