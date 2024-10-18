@@ -187,6 +187,7 @@ def main():
     # The number of spaceships that the factory sends 
     # to the buyer should be exactly the same
     assert(sum(buyer_stats) == spaceships_to_produce)
+    # print(sum(buyer_stats))
 
     # Plot space ship count vs queue size
     xaxis = [i for i in range(1, MAX_QUEUE_SIZE + 1)]
