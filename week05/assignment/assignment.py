@@ -96,7 +96,7 @@ class NonBlockingQueue():
 class SpaceShipFactory(threading.Thread):
     """ This is a factory.  It will create spaceships and place them on the queue """
 
-    def __init__(self):
+    def __init__(self, count, sem_space_available, sem_space_taken, spaceship_queue):
         # TODO - add attributes to self based on the parameters you pass in when instantiating
         #        your thread object (like count, semaphore, queue, etc)
         # Note: don't forget to call the super class's constructor
@@ -123,7 +123,7 @@ class SpaceShipFactory(threading.Thread):
 class SpaceShipBuyer(threading.Thread):
     """ This is a buyer that receives spaceships from the queue """
 
-    def __init__(self):
+    def __init__(self, sem_space_available, sem_space_taken, spaceship_queue, buyer_stats):
         # TODO - add attributes to self based on the parameters you pass in when instantiating
         #        your thread object (semaphore, queue, etc)
         # Note: don't forget to call the super class's constructor
