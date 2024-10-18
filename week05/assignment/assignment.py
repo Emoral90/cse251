@@ -100,13 +100,24 @@ class SpaceShipFactory(threading.Thread):
         # TODO - add attributes to self based on the parameters you pass in when instantiating
         #        your thread object (like count, semaphore, queue, etc)
         # Note: don't forget to call the super class's constructor
-        pass  # delete this and the comment above!!!
+        threading.Thread.__init__(self)
+        self.count = count
+        self.sem_space_available = sem_space_available
+        self.sem_space_taken = sem_space_taken
+        self.spaceship_queue = spaceship_queue
+
 
     def run(self):
         for i in range(self.count):
             # TODO Add your code here (delete this line)
-            pass # delete this line
+            self.sem_space_available.acquire()
+            spaceship = SpaceShip()
+            self.spaceship_queue.put(spaceship)
+            self.count += 1
+            self.sem_space_taken.release()
         # signal the buyer that there there are no more spaceships coming
+        self.spaceship_queue.put(None)
+        self.sem_space_taken.release()
 
 
 class SpaceShipBuyer(threading.Thread):
@@ -116,11 +127,21 @@ class SpaceShipBuyer(threading.Thread):
         # TODO - add attributes to self based on the parameters you pass in when instantiating
         #        your thread object (semaphore, queue, etc)
         # Note: don't forget to call the super class's constructor
-        pass  # remove this and the comment above!!
+        threading.Thread.__init__(self)
+        self.sem_space_available = sem_space_available
+        self.sem_space_taken = sem_space_taken
+        self.spaceship_queue = spaceship_queue
+        self.buyer_stats = buyer_stats
+
 
     def run(self):
         while True:
             # TODO Add your code here (delete this)
+            self.sem_space_taken.acquire()
+            spaceship = SpaceShip()
+            if spaceship == None:
+                break
+            self.buyer_stats[self.spaceship_queue()] += 1
 
             # Sleep a random amount after selling a space ship
             time.sleep(random.random() / (SLEEP_REDUCE_FACTOR))
@@ -134,7 +155,10 @@ def main():
     spaceships_to_produce = 500
 
     # TODO Create semaphores
+    sem_space_available = threading.Semaphore(MAX_QUEUE_SIZE)
+    sem_space_taken = threading.Semaphore(0)
     # TODO Create queue (ONLY use class NonBlockingQueue)
+    spaceship_queue = NonBlockingQueue()
     # TODO Create lock
 
     # This tracks the size of the queue at the time a spaceship
@@ -143,12 +167,19 @@ def main():
     buyer_stats = [0] * MAX_QUEUE_SIZE
 
     # TODO create your one spaceship factory
+    factory = SpaceShipFactory(spaceships_to_produce, sem_space_available, sem_space_taken, spaceship_queue)
 
     # TODO create your one spaceship buyer
+    buyer = SpaceShipBuyer(sem_space_available, sem_space_taken, spaceship_queue, buyer_stats)
 
     # TODO Start factory and buyer
+    factory.start()
+    buyer.start()
 
     # TODO Wait for factory and buyer to complete
+    factory.join()
+    buyer.join()
+
 
     total_time = "{:.2f}".format(time.perf_counter() - begin_time)
     print(f'Total time = {total_time} sec')
