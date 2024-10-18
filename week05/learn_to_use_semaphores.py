@@ -60,20 +60,29 @@ class Feeder(threading.Thread):
 
         # TODO create necessary attributes on self so that they can be
         #      accessed in the run function
+        self.sem_mouth_full = sem_mouth_full
+        self.sem_can_I_eat = sem_can_I_eat
+        self.table_queue = table_queue
+        self.food_made = food_made
 
     def run(self):
         # Loop over amount of food to make
         for _ in range(FOOD_TO_MAKE):
 
             # TODO - use a semaphore to prevent putting too much food in queue (table)
+            self.sem_mouth_full.acquire()
 
             # TODO - put food on queue (table), increment food made counter
+            food = Food()
+            self.table_queue.put(food)
 
             # TODO - signal to eater that food has been placed on table
-
-            pass  # remove this
+            self.sem_can_I_eat.release()
 
         # TODO - after adding all food, signal to eater that there is no more food
+        food == self.table_queue.get()
+        if food == None:
+            break
 
 
 class Eater(threading.Thread):
@@ -90,17 +99,25 @@ class Eater(threading.Thread):
 
         # TODO create necessary attributes on self so that they can be
         #      accessed in the run function
+        self.sem_can_I_eat = sem_can_I_eat
+        self.sem_mouth_full = sem_mouth_full
+        self.table_queue = table_queue
 
     def run(self):
         while True:
 
             # TODO - using a semaphore, prevent removing item from an empty queue
+            self.sem_can_I_eat.acquire()
 
             # TODO - get food from queue
+            food = self.table_queue.get()
 
             # TODO - if item from queue is Sentinel, then break; else increment food ate counter
+            if isinstance(food, Sentinel)
+            self.sem_mouth_full.release()
 
             # TODO - signal to feeder to put more food on table
+            self.se
 
             # Need some time to digest (leave this)
             time.sleep(random.random() / (SLEEP_REDUCE_FACTOR))
