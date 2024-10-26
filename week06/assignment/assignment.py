@@ -89,9 +89,17 @@ class NonBlockingQueue():
 class SpaceShipFactory(threading.Thread):
     """ This is a factory.  It will create spaceships and place them on the queue """
 
-    def __init__(self):
+    def __init__(self, queue, queue_semaphore, produce_semaphore, factory_stats, factory_id, start_barrier):
         self.spaceships_to_produce = random.randint(
             200, 300)     # Don't change
+        super().__init__()
+        self.queue = queue
+        self.queue_semaphore = queue_semaphore
+        self.produce_semaphore = produce_semaphore
+        self.factory_stats = factory_stats
+        self.factory_id = factory_id
+        self.start_barrier = start_barrier
+
 
     def run(self):
         # TODO produce the spaceship, the send them to the buyer
@@ -100,18 +108,39 @@ class SpaceShipFactory(threading.Thread):
 
         # TODO "Wake up/signal" the buyer one more time and send the stop flag.
         # Select one factory to do this (hint: use if factory_id == 0)
-        pass
+
+        self.start_barrier.wait()  # Wait for all factories to be ready
+        for _ in range(self.spaceships_to_produce):
+            self.queue_semaphore.acquire()          # Wait if queue is full
+            spaceship = SpaceShip()                 # Create a new spaceship
+            self.queue.put(spaceship)               # Add spaceship to queue
+            self.factory_stats[self.factory_id] += 1  # Track factory stats
+            self.produce_semaphore.release()        # Signal buyer a spaceship is ready
+        print(f"Factory {self.factory_id} finished producing {self.spaceships_to_produce} spaceships.")
+
 
 
 class SpaceShipBuyer(threading.Thread):
     """ This is a buyer that receives spaceships from the queue """
 
-    def __init__(self):
-        pass
+    def __init__(self, queue, queue_semaphore, produce_semaphore, buyer_stats, buyer_id, start_barrier):
+        super().__init__()
+        self.queue = queue
+        self.queue_semaphore = queue_semaphore
+        self.produce_semaphore = produce_semaphore
+        self.buyer_stats = buyer_stats
+        self.buyer_id = buyer_id
+        self.start_barrier = start_barrier
 
     def run(self):
+        self.start_barrier.wait()  # Wait for all buyers to be ready
         while True:
             # TODO get a spaceship
+
+            self.produce_semaphore.acquire()        # Wait until a spaceship is available
+            spaceship = self.queue.get()            # Remove spaceship from queue
+            self.buyer_stats[self.buyer_id] += 1    # Track buyer stats
+            self.queue_semaphore.release()          # Signal that queue has space
 
             # Sleep a little - don't change.  This is the last line of the loop
             time.sleep(random.random() / (SLEEP_REDUCE_FACTOR))
@@ -132,6 +161,14 @@ def run_production(factory_count, buyer_count):
     # TODO Create lock(s) -- if needed
     # TODO Create barrier(s)
 
+    # Initialize semaphores, queue, stats tracking, and barriers
+    queue = NonBlockingQueue()
+    queue_semaphore = threading.Semaphore(MAX_QUEUE_SIZE)
+    produce_semaphore = threading.Semaphore(0)
+    
+    # Barrier for synchronizing the start of all factories and buyers
+    start_barrier = threading.Barrier(factory_count + buyer_count)
+
     # This is used to track the number of cars receives by each dealer
     buyer_stats = list([0] * buyer_count)
     factory_stats = list([0] * factory_count)
@@ -145,6 +182,29 @@ def run_production(factory_count, buyer_count):
     # TODO Start all buyers
 
     # TODO Wait for mthem to complete
+
+    factories = [SpaceShipFactory(queue, queue_semaphore, produce_semaphore, factory_stats, i, start_barrier)
+                 for i in range(factory_count)]
+    buyers = [SpaceShipBuyer(queue, queue_semaphore, produce_semaphore, buyer_stats, i, start_barrier)
+              for i in range(buyer_count)]
+
+    # Start threads
+    for factory in factories:
+        factory.start()
+    for buyer in buyers:
+        buyer.start()
+
+    # Wait for all factories to complete
+    for factory in factories:
+        factory.join()
+
+    # All factories are finished; signal buyers to stop
+    for _ in buyers:
+        produce_semaphore.release()
+
+    # Wait for all buyers to complete
+    for buyer in buyers:
+        buyer.join()
 
     run_time = time.perf_counter() - begin_time
 
