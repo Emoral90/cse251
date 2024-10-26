@@ -133,12 +133,13 @@ class SpaceShipBuyer(threading.Thread):
         self.spaceship_queue = spaceship_queue
         self.buyer_stats = buyer_stats
 
-
     def run(self):
         while True:
-            # TODO Add your code here (delete this)
+            # Wait for an available spaceship
             self.sem_space_taken.acquire()
+            # Get a spaceship from 
             spaceship = SpaceShip()
+            spaceship = self.spaceship_queue.get()
             if spaceship == None:
                 break
             self.buyer_stats[self.spaceship_queue()] += 1
@@ -154,29 +155,28 @@ def main():
     # Number of spaceships the factory will send to the buyer
     spaceships_to_produce = 500
 
-    # TODO Create semaphores
+    # Create semaphores
     sem_space_available = threading.Semaphore(MAX_QUEUE_SIZE)
     sem_space_taken = threading.Semaphore(0)
-    # TODO Create queue (ONLY use class NonBlockingQueue)
+    # Create queue (ONLY use class NonBlockingQueue)
     spaceship_queue = NonBlockingQueue()
-    # TODO Create lock
 
     # This tracks the size of the queue at the time a spaceship
     # is removed from the queue by the buyer (do it after calling get()).
     # queue_stats[queue.size()] += 1
     buyer_stats = [0] * MAX_QUEUE_SIZE
 
-    # TODO create your one spaceship factory
+    # create your one spaceship factory
     factory = SpaceShipFactory(spaceships_to_produce, sem_space_available, sem_space_taken, spaceship_queue)
 
-    # TODO create your one spaceship buyer
+    # create your one spaceship buyer
     buyer = SpaceShipBuyer(sem_space_available, sem_space_taken, spaceship_queue, buyer_stats)
 
-    # TODO Start factory and buyer
+    # Start factory and buyer
     factory.start()
     buyer.start()
 
-    # TODO Wait for factory and buyer to complete
+    # Wait for factory and buyer to complete
     factory.join()
     buyer.join()
 
